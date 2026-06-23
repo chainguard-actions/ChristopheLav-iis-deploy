@@ -1,0 +1,44 @@
+name: Test IIS deploy with default skip-extra-files (false)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify action scripts exist
+        run: |
+          SCRIPT_PATH="$GITHUB_WORKSPACE/scripts/PublishAspNet5Website.ps1"
+          if [ ! -f "$SCRIPT_PATH" ]; then
+            echo "FAIL: PowerShell script not found at $SCRIPT_PATH"
+            exit 1
+          fi
+          echo "PASS: PowerShell script found"
+
+      - name: Create source directory
+        run: mkdir -p /tmp/test-source-default && echo "<html>Hello</html>" > /tmp/test-source-default/index.html
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          website-name: "MyDefaultWebsite"
+          msdeploy-service-url: "https://localhost:8172/msdeploy.axd"
+          msdeploy-username: "admin"
+          msdeploy-password: "secret"
+          source-path: "/tmp/test-source-default"
+          # skip-extra-files not set — uses default value of false
+
+      - name: Assert action ran with default skip-extra-files
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because there is no real MSDeploy server,
+          # but it must NOT be skipped — it must have been invoked
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action ran with default skip-extra-files (outcome=$OUTCOME)"

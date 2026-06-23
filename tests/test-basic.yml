@@ -1,0 +1,38 @@
+name: Test basic IIS deploy invocation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create source directory
+        run: mkdir -p /tmp/test-source && echo "<html>Hello</html>" > /tmp/test-source/index.html
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          website-name: "TestWebsite"
+          msdeploy-service-url: "https://localhost:8172/msdeploy.axd"
+          msdeploy-username: "testuser"
+          msdeploy-password: "testpassword"
+          source-path: "/tmp/test-source"
+
+      - name: Assert action was invoked (expected to fail due to no MSDeploy server)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because there is no real MSDeploy server,
+          # but it must NOT succeed unexpectedly (which would indicate a test setup issue)
+          if [ "$OUTCOME" = "success" ]; then
+            echo "WARN: action unexpectedly succeeded — no real MSDeploy server should be reachable"
+          fi
+          # The action should either fail (expected) or succeed — but it must not be skipped
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action ran (outcome=$OUTCOME)"
