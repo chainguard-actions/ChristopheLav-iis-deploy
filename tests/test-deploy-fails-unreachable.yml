@@ -1,0 +1,33 @@
+name: Test IIS Deploy fails with unreachable service
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create source directory
+        run: mkdir -p /tmp/test-source && echo "<html>test</html>" > /tmp/test-source/index.html
+
+      - id: deploy
+        name: Invoke IIS Deploy action (expected to fail - no real MSDeploy server)
+        uses: .
+        continue-on-error: true
+        with:
+          website-name: "TestWebsite"
+          msdeploy-service-url: "https://localhost:8172/msdeploy.axd"
+          msdeploy-username: "testuser"
+          msdeploy-password: "testpassword"
+          source-path: "/tmp/test-source"
+
+      - name: Assert action failed (no real MSDeploy server available)
+        env:
+          OUTCOME: ${{ steps.deploy.outcome }}
+        run: |
+          echo "actual outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail when MSDeploy server is unreachable, but got outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when MSDeploy server is unreachable"

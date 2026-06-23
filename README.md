@@ -1,15 +1,65 @@
-# ChristopheLav/iis-deploy
+# IIS Deploy action
 
-Allows to deploy a website on IIS
+This action allows to deploy a website on IIS.
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/ChristopheLav/iis-deploy](https://github.com/ChristopheLav/iis-deploy).
+This action is based on Microsoft scripts bundled with some versions of Visual Studio.
 
-## Versions
+The MS Deploy configuration uses these default settings:
+- `WebPublishMethod` = `MSDeploy`
+- `SkipExtraFilesOnServer` = `false`
+- `EnableMSDeployAppOffline` = `true`
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.1.0 | [`v1.1.0`](https://github.com/chainguard-actions/ChristopheLav-iis-deploy/tree/v1.1.0) | [`c84e558`](https://github.com/ChristopheLav/iis-deploy/commit/c84e558e88a35f9f64aa923323665f007dd35d15) |
+Also, some generic directories and files are excluded to prevent data loose:
 
+```
+'ExcludeFiles'=@(
+    @{'objectname'='filePath';'absolutepath'='.*google.*\.html'},
+    @{'objectname'='filePath';'absolutepath'='.*BingSiteAuth\.xml'},
+    @{'objectname'='filePath';'absolutepath'='logs\\.*'},
+    @{'objectname'='dirPath';'absolutepath'='logs'},
+    @{'objectname'='filePath';'absolutepath'='data\\.*'},
+    @{'objectname'='dirPath';'absolutepath'='data'}
+)}
+```
+
+## Requirements
+
+- A Windows runner
+- A runner with Web Deploy 3.0+ (more information [here](https://www.iis.net/downloads/microsoft/web-deploy) and [here](https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2008-r2-and-2008/dd568996(v=ws.10)))
+
+## What's new
+
+Refer [here](CHANGELOG.md) to the changelog.
+
+## Inputs
+
+It is recommended to put the `msdeploy-username` and `msdeploy-password` into a GitHub secrets to prevent clear value in your workflow.
+
+| Input | Required | Example | Default Value | Description |
+|-|-|-|-|-|
+| `website-name`          | Yes | `www.yourwebsite.ca`  | | Name of your website on IIS |
+| `msdeploy-service-url`  | Yes | `https://yourwebsite.ca:8172` | | MS Deploy Service URL |
+| `msdeploy-username`     | Yes | `username`        | | Username used by Basic authentication to the MS Deploy Service |
+| `msdeploy-password`     | Yes | `password`        | | Password used by Basic authentication to the MS Deploy Service |
+| `source-path`           | Yes | `${{ github.workspace }}\website\publish`  | | The path to the source directory that will be deployed |
+
+## Usage
+
+<!-- start usage -->
+```yaml
+- uses: ChristopheLav/iis-deploy@v1
+  with:
+    website-name: 'MyWebsite'
+    msdeploy-service-url: ${{ secrets.MSDEPLOY_URL }}
+    msdeploy-username: ${{ secrets.MSDEPLOY_USERNAME }}
+    msdeploy-password: ${{ secrets.MSDEPLOY_PASSWORD }}
+    source-path: ${{ github.workspace }}\website\publish
+```
+<!-- end usage -->
+
+## License
+
+The scripts and documentation in this project are released under the [MIT License](LICENSE)
 ## Privacy
 
 This Action contacts Chainguard's licensing server to verify authorization. Connection metadata (IP address, GitHub repository identifier, timestamp, and any metadata encoded in the auth token) is transmitted to Chainguard, Inc. even if authorization is denied in accordance with our [Privacy Notice](https://www.chainguard.dev/legal/privacy-notice)

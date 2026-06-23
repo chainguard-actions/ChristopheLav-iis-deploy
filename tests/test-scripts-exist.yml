@@ -1,0 +1,48 @@
+name: Test IIS Deploy scripts exist
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Assert PublishAspNet5Website.ps1 exists
+        run: |
+          SCRIPT_PATH="$GITHUB_WORKSPACE/scripts/PublishAspNet5Website.ps1"
+          echo "Checking for: $SCRIPT_PATH"
+          if [ ! -f "$SCRIPT_PATH" ]; then
+            echo "FAIL: PublishAspNet5Website.ps1 not found at $SCRIPT_PATH"
+            exit 1
+          fi
+          echo "PASS: PublishAspNet5Website.ps1 found"
+
+      - name: Assert action.yml exists
+        run: |
+          ACTION_PATH="$GITHUB_WORKSPACE/action.yml"
+          echo "Checking for: $ACTION_PATH"
+          if [ ! -f "$ACTION_PATH" ]; then
+            echo "FAIL: action.yml not found at $ACTION_PATH"
+            exit 1
+          fi
+          echo "PASS: action.yml found"
+
+      - id: action
+        name: Invoke action (expected to fail - no real MS Deploy service)
+        uses: .
+        continue-on-error: true
+        with:
+          website-name: "test-site"
+          msdeploy-service-url: "https://unreachable.example.com:8172/msdeploy.axd"
+          msdeploy-username: "testuser"
+          msdeploy-password: "testpassword"
+          source-path: "${{ github.workspace }}"
+
+      - name: Assert action was attempted
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action was invoked (outcome: ${{ steps.action.outcome }})"
