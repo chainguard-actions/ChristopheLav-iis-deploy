@@ -8,7 +8,7 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
 Action **ChristopheLav--iis-deploy/v1.1.1** was hardened automatically. 7 finding(s) were identified and resolved across 1 iteration(s).
 
@@ -16,11 +16,11 @@ Action **ChristopheLav--iis-deploy/v1.1.1** was hardened automatically. 7 findin
 
 ### script-injection (severity: high)
 
-Sub-rule (a): Multiple ${{ ... }} expressions are directly interpolated into the run: shell command in action.yml. The step passes all inputs as positional arguments via direct expression interpolation: `${{ github.action_path }}/scripts/PublishAspNet5Website.ps1`, `${{ inputs.source-path }}`, `${{ inputs.msdeploy-service-url }}`, `${{ inputs.website-name }}`, `${{ inputs.msdeploy-username }}`, `${{ inputs.msdeploy-password }}`, `${{ inputs.skip-extra-files }}`. An attacker controlling any of these inputs (e.g. website-name, source-path, msdeploy-password) can inject arbitrary PowerShell commands before the shell ever parses them. These values should be passed via env: variables and referenced as quoted shell variables instead.
+The run: block in action.yml directly interpolates multiple ${{ inputs.* }} expressions into the PowerShell shell command string (sub-rule a). The values of inputs.source-path, inputs.msdeploy-service-url, inputs.website-name, inputs.msdeploy-username, inputs.msdeploy-password, and inputs.skip-extra-files are all substituted verbatim into the command before PowerShell executes it. An attacker-controlled input containing shell metacharacters (semicolons, parentheses, backticks, etc.) can break out of the intended command and execute arbitrary code. Additionally, ${{ github.action_path }} is interpolated directly, which — while less attacker-controlled — still violates the rule that no ${{ ... }} expression should appear inside a run: block. Fix: move all inputs into env: variables and reference them as quoted PowerShell variables (e.g., $env:SOURCE_PATH) inside the script, or pass them as named parameters with proper quoting.
 
 Locations:
 
-- `action.yml:27`
+- `action.yml:23`
 
 ### static-inline-injection (severity: high)
 
@@ -78,5 +78,5 @@ Locations:
 
 **Notes:**
 
-Fixed all script injection findings in action.yml by moving all ${{ ... }} expressions (github.action_path, inputs.source-path, inputs.msdeploy-service-url, inputs.website-name, inputs.msdeploy-username, inputs.msdeploy-password, inputs.skip-extra-files) from the run: block into an env: block. The run: block now references these values as PowerShell environment variables ($env:ACTION_PATH, $env:SOURCE_PATH, etc.), preventing any attacker-controlled input from being interpolated directly into the shell command. The step name was also updated to remove the ${{ inputs.website-name }} expression.
+Fixed all script injection findings in action.yml by moving all ${{ inputs.* }} and ${{ github.action_path }} expressions out of the run: block and into an env: block. The PowerShell run: block now references values via $env:VAR_NAME with named parameters (-packOutput, -deployUrl, -websiteName, -deployUserName, -deployUserPassword, -skipExtraFilesOnServer), preventing any attacker-controlled input from being interpreted as shell commands. The step name was also simplified to remove the inline ${{ inputs.website-name }} interpolation.
 

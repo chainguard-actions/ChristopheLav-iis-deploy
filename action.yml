@@ -50,9 +50,14 @@ runs:
         MSDEPLOY_USERNAME: ${{ inputs.msdeploy-username }}
         MSDEPLOY_PASSWORD: ${{ inputs.msdeploy-password }}
         SKIP_EXTRA_FILES: ${{ inputs.skip-extra-files }}
-      run: >
-        & "$env:ACTION_PATH/scripts/PublishAspNet5Website.ps1" $env:SOURCE_PATH $env:MSDEPLOY_SERVICE_URL $env:WEBSITE_NAME $env:MSDEPLOY_USERNAME $env:MSDEPLOY_PASSWORD $env:SKIP_EXTRA_FILES
-
+      run: |
+        & "$env:ACTION_PATH/scripts/PublishAspNet5Website.ps1" `
+          -packOutput "$env:SOURCE_PATH" `
+          -deployUrl "$env:MSDEPLOY_SERVICE_URL" `
+          -websiteName "$env:WEBSITE_NAME" `
+          -deployUserName "$env:MSDEPLOY_USERNAME" `
+          -deployUserPassword "$env:MSDEPLOY_PASSWORD" `
+          -skipExtraFilesOnServer "$env:SKIP_EXTRA_FILES"
 branding:
   icon: upload-cloud
   color: purple

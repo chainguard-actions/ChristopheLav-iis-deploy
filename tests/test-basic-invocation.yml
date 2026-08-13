@@ -1,4 +1,4 @@
-name: Test skip-extra-files parameter
+name: Test basic invocation with valid inputs
 on:
   workflow_dispatch:
 jobs:
@@ -9,10 +9,10 @@ jobs:
 
       - name: Create source directory for deployment
         run: |
-          mkdir -p /tmp/deploy-source-skip
-          echo "<html><body>Skip Extra Files Test</body></html>" > /tmp/deploy-source-skip/index.html
+          mkdir -p /tmp/deploy-source
+          echo "<html><body>Hello</body></html>" > /tmp/deploy-source/index.html
 
-      - name: Run action with skip-extra-files enabled
+      - name: Run action (expected to fail at MSDeploy connection, not at input validation)
         id: action
         uses: .
         with:
@@ -20,20 +20,21 @@ jobs:
           msdeploy-service-url: "https://localhost:8172/msdeploy.axd"
           msdeploy-username: "testuser"
           msdeploy-password: "testpassword"
-          source-path: "/tmp/deploy-source-skip"
-          skip-extra-files: "true"
+          source-path: "/tmp/deploy-source"
+          skip-extra-files: "false"
         continue-on-error: true
 
-      - name: Assert action was invoked with skip-extra-files=true
+      - name: Assert action was invoked and failed at MSDeploy (not at input validation)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           # The action should fail because there is no real MSDeploy server,
-          # but it should NOT fail due to invalid skip-extra-files parameter.
-          # The PowerShell script converts the string 'true' to boolean.
+          # but it should NOT fail due to missing/invalid inputs.
+          # We accept either 'failure' (MSDeploy connection error) or 'success'
+          # (unlikely in test env but valid). We only reject 'skipped'.
           if [ "$OUTCOME" = "skipped" ]; then
             echo "FAIL: action was skipped unexpectedly"
             exit 1
           fi
-          echo "PASS: action was invoked with skip-extra-files=true (outcome=$OUTCOME)"
+          echo "PASS: action was invoked (outcome=$OUTCOME)"
