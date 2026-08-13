@@ -44,20 +44,20 @@ runs:
       shell: pwsh
       env:
         ACTION_PATH: ${{ github.action_path }}
-        INPUT_SOURCE_PATH: ${{ inputs.source-path }}
-        INPUT_MSDEPLOY_SERVICE_URL: ${{ inputs.msdeploy-service-url }}
-        INPUT_WEBSITE_NAME: ${{ inputs.website-name }}
-        INPUT_MSDEPLOY_USERNAME: ${{ inputs.msdeploy-username }}
-        INPUT_MSDEPLOY_PASSWORD: ${{ inputs.msdeploy-password }}
-        INPUT_SKIP_EXTRA_FILES: ${{ inputs.skip-extra-files }}
+        SOURCE_PATH: ${{ inputs.source-path }}
+        MSDEPLOY_SERVICE_URL: ${{ inputs.msdeploy-service-url }}
+        WEBSITE_NAME: ${{ inputs.website-name }}
+        MSDEPLOY_USERNAME: ${{ inputs.msdeploy-username }}
+        MSDEPLOY_PASSWORD: ${{ inputs.msdeploy-password }}
+        SKIP_EXTRA_FILES: ${{ inputs.skip-extra-files }}
       run: |
         & "$env:ACTION_PATH/scripts/PublishAspNet5Website.ps1" `
-          $env:INPUT_SOURCE_PATH `
-          $env:INPUT_MSDEPLOY_SERVICE_URL `
-          $env:INPUT_WEBSITE_NAME `
-          $env:INPUT_MSDEPLOY_USERNAME `
-          $env:INPUT_MSDEPLOY_PASSWORD `
-          ([System.Convert]::ToBoolean($env:INPUT_SKIP_EXTRA_FILES))
+          -packOutput "$env:SOURCE_PATH" `
+          -deployUrl "$env:MSDEPLOY_SERVICE_URL" `
+          -websiteName "$env:WEBSITE_NAME" `
+          -deployUserName "$env:MSDEPLOY_USERNAME" `
+          -deployUserPassword "$env:MSDEPLOY_PASSWORD" `
+          -skipExtraFilesOnServer ([System.Convert]::ToBoolean("$env:SKIP_EXTRA_FILES"))
 branding:
   icon: upload-cloud
   color: purple

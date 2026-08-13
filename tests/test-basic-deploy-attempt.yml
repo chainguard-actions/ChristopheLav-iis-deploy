@@ -1,4 +1,4 @@
-name: Test deploy with skip-extra-files enabled
+name: Test basic deploy attempt (expected connection failure)
 on:
   workflow_dispatch:
 jobs:
@@ -9,20 +9,19 @@ jobs:
 
       - name: Create source directory for deployment
         run: |
-          mkdir -p /tmp/deploy-src-skip
-          echo "<html><body>Skip Extra Files Test</body></html>" > /tmp/deploy-src-skip/index.html
-          echo "app.js content" > /tmp/deploy-src-skip/app.js
+          mkdir -p /tmp/deploy-src
+          echo "<html><body>Hello World</body></html>" > /tmp/deploy-src/index.html
 
-      - name: Run IIS Deploy action with skip-extra-files=true (expected to fail - no real IIS server)
+      - name: Run IIS Deploy action (expected to fail - no real IIS server)
         id: deploy
         uses: .
         with:
-          website-name: "TestWebsiteSkip"
+          website-name: "TestWebsite"
           msdeploy-service-url: "https://localhost:8172/msdeploy.axd"
           msdeploy-username: "testuser"
           msdeploy-password: "testpassword"
-          source-path: "/tmp/deploy-src-skip"
-          skip-extra-files: true
+          source-path: "/tmp/deploy-src"
+          skip-extra-files: false
         continue-on-error: true
 
       - name: Assert action ran and failed with connection error (no real IIS server)
@@ -31,9 +30,9 @@ jobs:
         run: |
           echo "outcome: $OUTCOME"
           # The action should fail because there is no real IIS/MSDeploy server
-          # This confirms the action correctly attempted to connect with skip-extra-files=true
+          # This confirms the action correctly attempted to connect
           if [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action correctly failed when no IIS server is available (skip-extra-files=true)"
+            echo "PASS: action correctly failed when no IIS server is available"
           else
             echo "FAIL: expected failure outcome but got: $OUTCOME"
             exit 1
